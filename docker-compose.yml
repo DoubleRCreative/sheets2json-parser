@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+  # Application
+  app:
+    build:
+      args:
+        user: laravel
+        uid: 1000
+      context: .
+      dockerfile: provision/docker/Dockerfile
+    image: sheets2json
+    container_name: sheets2json-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - public:/var/www/public:ro
+      - tmp:/tmp
+    networks:
+      - sheets2json
+    logging:
+      driver: loki #Grafana Loki
+      options:
+        loki-url: 'http://192.168.1.50:3100/loki/api/v1/push'
+        loki-retries: 2
+        loki-max-backoff: 800ms
+        loki-timeout: 3s
+        keep-file: 'true'
+        mode: "non-blocking"
+
+  # Web Server
+  nginx:
+    image: nginx:1.17-alpine
+    container_name: sheets2json-nginx
+    restart: unless-stopped
+    ports:
+      - 8882:80
+    volumes:
+      - public:/var/www/public:ro
+      - ./provision/docker/nginx:/etc/nginx/conf.d
+    networks:
+      - sheets2json
+
+# Network
+networks:
+  sheets2json:
+    driver: bridge
+
+# Volumes
+volumes:
+  public:
+  tmp:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs

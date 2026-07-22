@@ -1,0 +1,46 @@
+version: '3.7'
+
+services:
+  # Application
+  app:
+    build:
+      args:
+        user: laravel
+        uid: 1000
+      context: .
+      dockerfile: provision/docker/Dockerfile
+    image: sheets2json-parser
+    container_name: sheets2json-parser
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - tmp:/tmp
+    networks:
+      - sheets2json-parser
+
+  # Web Server
+  nginx:
+    image: nginx:1.17-alpine
+    container_name: sheets2json-parser-nginx
+    restart: unless-stopped
+    ports:
+      - 3300:80
+    volumes:
+      - ./:/var/www
+      - ./provision/docker/nginx:/etc/nginx/conf.d
+    networks:
+      - sheets2json-parser
+
+# Network
+networks:
+  sheets2json-parser:
+    driver: bridge
+
+# Volumes
+volumes:
+  tmp:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs

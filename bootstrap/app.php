@@ -1,0 +1,29 @@
+<?php
+
+use App\Http\Middleware\ApiAuthorization;
+use App\Http\Middleware\ApiRateLimit;
+use Illuminate\Foundation\Application;
+use App\Http\Middleware\CollectionDataRateLimit;
+use App\Http\Middleware\DocumentDataRateLimit;
+use App\Http\Middleware\CollectionDataAuthenticate;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        apiPrefix: '',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        // Custom aliases
+        $middleware->alias([
+            'web.domain' => \App\Http\Middleware\EnsureWebDomain::class,
+            'api.domain' => \App\Http\Middleware\EnsureApiDomain::class,
+        ]);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
