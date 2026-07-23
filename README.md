@@ -1,105 +1,130 @@
-# Sheets2JSON API (Laravel)
+# Sheets2JSON — Core Document Parsing API
 
-Turn public CSV/XLSX/Google Sheets URLs into fast, queryable JSON APIs. Supports on-the-fly parsing and persistent, versioned collections with tokenized access and rate limits.
+Turn public CSV/XLSX/Google Sheets URLs into JSON on the fly.
 
 ## What It Does
-- Imports CSV, XLSX, and Google Sheets from public URLs.
-- Parses data on demand or stores it as versioned collections.
-- Exposes a REST API with filtering, sorting, pagination, and schema metadata.
-- Supports public or token-gated datasets with per-plan limits.
+- Fetches remote tabular documents (CSV, XLSX, Google Sheets, SharePoint links).
+- Parses and returns JSON (paginated) or NDJSON (streaming).
+- Supports header rows, sheet selection, column filtering, range/offset pagination, and skip-empty rows.
+- Caches fetched documents temporarily (5-minute TTL) for repeat requests.
 
-## Core Features
-- **Document Parsing API**: Parse a public document URL on the fly and return JSON with metadata (count, size, hash).
-- **Collections**: Persist a document URL as a collection, with versioning and optional public access.
-- **Collection Data API**: Query collection data by JSON fields with rich filters and ordering.
-- **Schema Endpoint**: Retrieve schema and collection/version metadata for a given dataset.
-- **Token Access**: Issue collection-scoped tokens and enforce access control.
-- **Rate Limits & Quotas**: Plan-based limits for document size, record count, and API request rates.
+## API Surface
 
-## API Surface (Concise)
-All routes live under `/api/v1` (or no `/api` prefix when using an `api.*` subdomain).
-
-Collections:
-- `GET /api/v1/collections`
-- `POST /api/v1/collections`
-- `GET /api/v1/collections/{collection}`
-- `PUT /api/v1/collections/{collection}`
-- `DELETE /api/v1/collections/{collection}`
-
-Collection Versions:
-- `GET /api/v1/collections/{collection}/versions`
-- `POST /api/v1/collections/{collection}/versions`
-- `GET /api/v1/collections/{collection}/versions/{version}`
-- `DELETE /api/v1/collections/{collection}/versions/{version}`
-
-Collection Tokens:
-- `GET /api/v1/collections/{collection}/tokens`
-- `POST /api/v1/collections/{collection}/tokens`
-- `PUT /api/v1/collections/{collection}/tokens/{token}`
-- `DELETE /api/v1/collections/{collection}/tokens/{token}`
-
-Collection Data:
-- `GET /api/v1/data/collection/{collection}`
-- `GET /api/v1/data/collection/{collection}/schema`
-- `GET /api/v1/data/collection/{collection}/{collectionItem}`
+Root:
+- `GET /` — API info
+- `GET /openapi.json` — OpenAPI spec
 
 Document Parsing:
-- `GET /api/v1/data/document`
-- `GET /api/v1/doc` (legacy)
+- `GET /v1/doc` — Parse document, return JSON (legacy)
+- `GET /v2/doc` — Parse document, return JSON (current)
+- `GET /v2/doc/stream` — Parse document, return NDJSON stream
 
-## Query Capabilities (Collection Data)
-Supports:
-- `where`, `whereNot`, `whereIn`, `whereNotIn`
-- `whereEmpty`, `whereNotEmpty`
-- `whereGreater`, `whereLess`, `whereBetween`
-- `whereTrue`, `whereNotTrue`
-- `orderBy`, `limit`, `page`, `select`, `selectNot`
-
-Filtering and ordering are enforced against the dataset schema to prevent invalid field access.
+All routes serve under `/api/...` on web domains, or directly on `api.*` subdomains.
 
 ## Architecture Overview
-**Flow 1: On-the-fly Document Parsing**
-1. `DocumentController` validates request parameters.
-2. `DocumentService` fetches the remote URL, caches to temp storage, detects MIME type.
-3. `DocumentProcessor` selects the parser (CSV/XLSX/Google) and streams results.
-4. Response includes data plus metadata (count, size, hash, first/last row).
 
-**Flow 2: Collections**
-1. Collections store a document URL and parsing settings.
-2. Versions represent processed datasets with schema and metadata.
-3. Collection data endpoints query `collection_items` by JSON field filters and schema-aware sorting.
+1. `DocumentController` validates request parameters (URL, headers, sheet, range, columns, etc).
+2. `DocumentService` fetches the remote URL via the appropriate HTTP client (Google/Microsoft/generic), streams to a temp file, caches in the `documents` table.
+3. `DocumentProcessor` selects the correct parser based on MIME type.
+4. The parser streams rows as a generator, applying filters (header normalization, offset, range, column selection, skip-empty).
+5. Response includes data plus metadata (count, size, hash, first/last row), or raw NDJSON for the stream endpoint.
 
-**Access + Rate Limits**
-- Access tokens (collection or user scope) are issued via Sanctum.
-- Public collections bypass token auth.
-- Middleware enforces per-plan rate limits for API and data endpoints.
+## Supported Sources
 
-## Project Structure (Key Areas)
-- `app/Http/Controllers/Api`: API endpoints (collections, versions, data, documents).
-- `app/Http/Controllers/Web`: Web UI endpoints (dashboard, explorer).
-- `app/Http/Requests`: Validation and request transformation.
-- `app/Http/Resources`: JSON response shaping.
-- `app/Components/Document`: Remote document fetching and processing.
-- `app/Components/Parser`: CSV/XLSX/Google Sheets parsers.
-- `app/Models`: Core models (Collection, CollectionVersion, CollectionItem, AccessToken, SubscriptionPlan).
-- `routes`: API routing and web routing configuration.
+- **CSV** — via `league/csv`
+- **XLSX** — via `openspout/openspout`
+- **Google Sheets** — via the deprecated GViz JSON endpoint + `halaxa/json-machine`
+- **Microsoft Excel Online / SharePoint** — resolved to XLSX download via `MicrosoftClient`
 
-## Local Notes
-This project uses Laravel with Sanctum for token auth and Cashier for subscription plan configuration.
+## Hard Limits
 
-## MCP Server (Laravel MCP)
-- Package: `laravel/mcp`
-- Local handle: `sheets2json` (run with `php artisan mcp:start sheets2json`)
-- Web endpoint: `POST /mcp/sheets2json` on domains listed in `config/domains.php` under `api`
+- Maximum download size: **50 MB** (configured in `DocumentService::MAX_BYTE_SIZE`)
+- Record limits can be set per request via options
 
-### Exposed Tool (current)
-- `document.parse`: wraps the public document endpoint and returns parsed JSON payloads.
+## Project Structure
 
-### MCP Environment Config
+```
+app/
+  Components/
+    Document/       — Remote document fetching, caching, processing
+      Document.php         — Eloquent model (documents table)
+      DocumentService.php  — Fetch + cache logic
+      DocumentProcessor.php— Parser selection + orchestration
+    Http/
+      Client.php           — Base HTTP client
+      GoogleClient.php     — Google Sheets URL handling
+      MicrosoftClient.php  — SharePoint/OneDrive URL handling
+    Parser/
+      Parser.php           — Abstract parser (header/offset/range/column logic)
+      Csv.php              — CSV parser
+      Xls.php              — XLSX parser
+      Google.php           — Google Sheets parser
+    Utility/
+      Data.php             — Schema inference, array utilities
+      JsonStreamWrapper.php— Strips GViz wrapper for JsonMachine
+  Console/Commands/
+    DocumentCleanup.php    — Deletes expired documents (every 5 min)
+  Http/
+    Controllers/Api/
+      DocumentController.php       — v1/v2 document endpoints
+      DocumentStreamController.php — NDJSON stream endpoint
+    Middleware/
+      EnsureApiDomain.php  — Host validation + JSON Accept header
+      EnsureWebDomain.php  — Host validation
+    Requests/
+      DocumentRequest.php  — Request validation
+  Mcp/
+    Servers/
+      Sheets2JsonServer.php — MCP server registration
+    Tools/
+      DocumentParseTool.php — MCP document.parse tool
+routes/
+  api.php           — Domain-based routing (api.* vs web)
+  api-domain.php    — Shared route group (root, openapi, auth info)
+  api/
+    v1.php          — Legacy v1 document route
+    v2.php          — Current v2 document + stream routes
+  console.php       — Document cleanup schedule
+```
+
+## Running Locally
+
+**Requirements:** PHP ^8.2, Composer, SQLite (or PostgreSQL)
+
+```bash
+composer install
+cp .env.example .env && php artisan key:generate
+php artisan migrate
+php artisan serve
+```
+
+No queue worker or scheduler required unless you want document cleanup to run automatically (the cleanup command runs via `php artisan app:document-cleanup` manually or `php artisan schedule:work` for automatic scheduling).
+
+## Running With Docker
+
+```bash
+# Dev (bind-mount)
+docker compose -f docker-compose.dev.yml up --build
+
+# Prod-like
+docker compose up --build
+```
+
+## Tests
+
+```bash
+php artisan test
+```
+
+## MCP Server
+
+A `sheets2json` MCP server is available via `laravel/mcp`, exposing the `document.parse` tool.
+
+- Local: `php artisan mcp:start sheets2json`
+- Web: `POST /mcp/document` on API domains
+
+**Environment config:**
 - `SHEETS2JSON_API_BASE_URL` (default: `${APP_URL}/api`)
 - `SHEETS2JSON_DOCUMENT_PATH` (default: `/v1/data/document`)
 - `SHEETS2JSON_API_TOKEN` (optional bearer token)
 - `SHEETS2JSON_API_TIMEOUT` (default: `60`)
-
-### Future Extension
-The MCP server is intentionally structured to add `collection.*` tools next without changing server registration (`app/Mcp/Servers/Sheets2JsonServer.php`).

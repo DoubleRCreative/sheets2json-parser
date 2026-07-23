@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 /**
  * API v1
- * Versioned api endpoints for Collection and Data APIs
+ * Legacy document endpoint
  */
 
 // Legacy document routes

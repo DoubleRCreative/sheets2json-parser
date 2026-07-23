@@ -1,11 +1,6 @@
 <?php
 
-use App\Http\Middleware\ApiAuthorization;
-use App\Http\Middleware\ApiRateLimit;
 use Illuminate\Foundation\Application;
-use App\Http\Middleware\CollectionDataRateLimit;
-use App\Http\Middleware\DocumentDataRateLimit;
-use App\Http\Middleware\CollectionDataAuthenticate;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
