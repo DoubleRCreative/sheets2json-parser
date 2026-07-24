@@ -64,7 +64,7 @@ class DocumentController extends Controller
             // Process document
             $processor = new DocumentProcessor($document, $documentOptions);
             foreach ($processor->results() as $item) {
-                $results[] = Data::toArrayRecursive($item);
+                $results[] = Data::toArrayRecursive($item['data'] ?? []);
             }
 
             // Handle any non fatal error

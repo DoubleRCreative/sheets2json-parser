@@ -37,7 +37,7 @@ class XlsTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[1]);
+        $headers = array_keys($data[1]['data']);
 
         // Assert array results
         $this->assertIsArray($data);
@@ -64,13 +64,13 @@ class XlsTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[0]);
+        $headers = array_keys($data[0]['data']);
 
         // Assert array results
         $this->assertIsArray($data);
         $this->assertCount(21, $data);
         $this->assertNotNull($headers);
-        $this->assertEquals('_id', $data[0][0]);
+        $this->assertEquals('_id', $data[0]['data'][0]);
         $this->assertNotEquals('_id', $headers[0]);
     }
 }

@@ -50,18 +50,12 @@ class DocumentStreamController extends Controller
 
             return new StreamedResponse(function () use ($processor, $document, $request) {
                 // Data rows
-                $index = 0;
                 foreach ($processor->results() as $item) {
-                    $index++;
                     $row = [];
                     $data = Data::toArrayRecursive($item);
                     $row['type'] = 'row';
-                    $row['metadata'] = [
-                        'index' => $data['__index'] ?? null,
-                        'size' => $data['__size'] ?? null
-                    ];
-                    unset($data['__index'], $data['__size']);
-                    $row['data'] = $data;
+                    $row['metadata'] = $data['metadata'];
+                    $row['data'] = $data['data'] ?? [];
                     echo json_encode($row) . "\n";
 
                     if (ob_get_level()) ob_flush();

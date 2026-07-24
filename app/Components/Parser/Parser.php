@@ -202,6 +202,15 @@ abstract class Parser
                 // Calculate size of current item
                 $itemSize = mb_strlen(json_encode($item), '8bit');
 
+                // Transform item to include metadata
+                $item = [
+                    'data' => $item,
+                    'metadata' => [
+                        'index' => $index,
+                        'size' => $itemSize
+                    ]
+                ];
+
                 // Yield item
                 yield $item;
 

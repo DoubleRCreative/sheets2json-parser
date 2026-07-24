@@ -37,7 +37,7 @@ class GoogleTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[0]);
+        $headers = array_keys($data[0]['data']);
 
         // Assert array results
         $this->assertIsArray($data);
@@ -64,13 +64,13 @@ class GoogleTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[0]);
+        $headers = array_keys($data[0]['data']);
 
         // Assert array results
         $this->assertIsArray($data);
         $this->assertCount(4, $data);
         $this->assertNotNull($headers);
-        $this->assertEquals('Row 1 Value 1', $data[0][0]);
+        $this->assertEquals('Row 1 Value 1', $data[0]['data'][0]);
         $this->assertNotEquals('Row_1_Value_1', $headers[0]);
     }
 }

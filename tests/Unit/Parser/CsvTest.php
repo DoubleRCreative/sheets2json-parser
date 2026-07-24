@@ -38,7 +38,7 @@ class CsvTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[0]);
+        $headers = array_keys($data[0]['data']);
         
         // Assert array results
         $this->assertIsArray($data);
@@ -65,13 +65,13 @@ class CsvTest extends ParserTest
         // Convert data to array
         $data = iterator_to_array($data);
         // Header headers from first item keys
-        $headers = array_keys($data[0]);
+        $headers = array_keys($data[0]['data']);
         
         // Assert array results
         $this->assertIsArray($data);
         $this->assertCount(5, $data);
         $this->assertNotNull($headers);
-        $this->assertEquals('header 1', $data[0][0]);
+        $this->assertEquals('header 1', $data[0]['data'][0]);
         $this->assertNotEquals('header_1', $headers[0]);
     }
 }
