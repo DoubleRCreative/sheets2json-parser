@@ -42,8 +42,8 @@ class DocumentController extends Controller
 
             // Build document options
             $documentOptions = [
-                Document::OPTION_SIZE => 10000000,
-                Document::OPTION_LIMIT => 10000000,
+                Document::OPTION_SIZE => $Request->getSizeLimit(),
+                Document::OPTION_LIMIT => $Request->getRecordLimit(),
                 Document::OPTION_HEADERS => $headers,
                 Document::OPTION_TARGET => $sheet,
                 Document::OPTION_RANGE => $range,

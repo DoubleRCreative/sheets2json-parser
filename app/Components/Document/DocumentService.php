@@ -49,10 +49,10 @@ class DocumentService extends HttpService
         $this->cache = $cache;
         $this->src = $url;
         $this->options = array_merge([
-            Document::OPTION_SIZE => (100 * 1024), // 100KB default
+            Document::OPTION_SIZE => (1000 * 1024), // 1MB default
             Document::OPTION_LIMIT => 1000,
             'timeout' => 6 // 6 Second timeout
-        ], $options);
+        ], array_filter($options));
     }
 
     /**

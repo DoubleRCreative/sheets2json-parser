@@ -44,4 +44,14 @@ class DocumentRequest extends FormRequest
         $messages['range.regex'] = "Invalid range value";
         return $messages;
     }
+
+    public function getSizeLimit()
+    {
+        return $this->header('x-document-size-limit');
+    }
+
+    public function getRecordLimit()
+    {
+        return $this->header('x-document-record-limit');
+    }
 }

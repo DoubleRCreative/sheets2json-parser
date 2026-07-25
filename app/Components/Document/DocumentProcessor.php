@@ -35,11 +35,11 @@ class DocumentProcessor
     /**
      * Class constructor
      */
-    public function __construct(Document $Document, array $options = [])
+    public function __construct(Document $Document)
     {
         // Set attributes
         $this->document = $Document;
-        $this->options = $options;
+        $this->options = $Document->options ?? [];
 
         try {
             $this->process();

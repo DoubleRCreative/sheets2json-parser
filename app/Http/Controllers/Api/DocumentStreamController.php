@@ -30,8 +30,8 @@ class DocumentStreamController extends Controller
             $offset = $request['offset'] ?? 0;
 
             $documentOptions = [
-                Document::OPTION_SIZE => 10000000,
-                Document::OPTION_LIMIT => 10000000,
+                Document::OPTION_SIZE => $Request->getSizeLimit(),
+                Document::OPTION_LIMIT => $Request->getRecordLimit(),
                 Document::OPTION_HEADERS => $headers,
                 Document::OPTION_TARGET => $sheet,
                 Document::OPTION_RANGE => $range,
@@ -46,7 +46,7 @@ class DocumentStreamController extends Controller
                 abort(400, 'Content is invalid');
             }
 
-            $processor = new DocumentProcessor($document, $documentOptions);
+            $processor = new DocumentProcessor($document);
 
             return new StreamedResponse(function () use ($processor, $document, $request) {
                 // Data rows
