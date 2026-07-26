@@ -77,6 +77,7 @@ class DocumentStreamController extends Controller
                     'last' => $processor->last(),
                     'from' => $processor->start(),
                     'to' => $processor->end(),
+                    'next' => $processor->next(),
                     'size' => $processor->size(),
                     'error' => $error ? $error->getError() : null,
                 ]);

@@ -157,4 +157,21 @@ class DocumentProcessor
     {
         return $this->document;
     }
+
+    /**
+     * Next row
+     */
+    public function next(): ?int
+    {
+        $total = $this->total() + 1;
+        $next = $this->end() + 1;
+        $count = $this->count();
+        if ($count > $total) {
+            return null;
+        }
+        if ($next > $total) {
+            return null;
+        }
+        return $next;
+    }
 }
