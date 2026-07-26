@@ -3,13 +3,16 @@
 use Illuminate\Support\Facades\Route;
 
 /**
- * API v1
- * Legacy document endpoint
+ * Parsing API v1
  */
-
-// Legacy document routes
-// /api/v1/doc/*
-Route::middleware(['throttle:12'])->group(function () {
-    Route::get('/v1/doc', 'App\Http\Controllers\Api\DocumentController@index')
-        ->name('api.document.data.legacy');
+Route::group([
+        'prefix' => 'v1',
+        'namespace' => 'App\Http\Controllers\Api'
+    ], function () {
+    // Document routes
+    // /api/v1/doc/*
+    Route::middleware([])->group(function () {
+        Route::get('/doc/stream', 'DocumentStreamController@stream')
+            ->name('api.document.parse');
+    });
 });
