@@ -27,6 +27,25 @@ services:
         loki-timeout: 3s
         keep-file: 'true'
         mode: "non-blocking"
+  
+  # Scheduler
+  scheduler:
+    image: sheets2json-parser
+    container_name: sheets2json-parser-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: "php artisan schedule:work"
+    volumes:
+      - tmp:/tmp
+    logging:
+      driver: loki #Grafana Loki
+      options:
+        loki-url: 'http://192.168.1.50:3100/loki/api/v1/push'
+        loki-retries: 2
+        loki-max-backoff: 800ms
+        loki-timeout: 3s
+        keep-file: 'true'
+        mode: "non-blocking"
 
   # Web Server
   nginx:

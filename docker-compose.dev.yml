@@ -19,6 +19,17 @@ services:
     networks:
       - sheets2json-parser
 
+  # Scheduler
+  scheduler:
+    image: sheets2json-parser
+    container_name: sheets2json-parser-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: "php artisan schedule:work"
+    volumes:
+      - .:/var/www
+      - tmp:/tmp
+
   # Web Server
   nginx:
     image: nginx:1.17-alpine
