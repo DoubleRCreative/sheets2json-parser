@@ -29,7 +29,7 @@ class DocumentParseTool extends Tool
 
         try {
             $documentRequest = DocumentRequest::create(
-                '/v1/data/document',
+                '/v1/doc/stream',
                 'GET',
                 $input
             );
