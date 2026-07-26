@@ -1,21 +1,14 @@
 <?php
 
+use App\Http\Controllers\ApiController;
 use Illuminate\Support\Facades\Route;
 
-$apiDomains = config('domains.api', []);
-$webDomains = config('domains.web', []);
-$apiOnlyDomains = array_values(array_diff($apiDomains, $webDomains));
-$sharedDomains = array_values(array_intersect($apiDomains, $webDomains));
+Route::get('/', [ApiController::class, 'index'])->name('api.root');
+Route::get('/openapi.json', [ApiController::class, 'openapi'])->name('api.openapi');
 
-foreach ($apiOnlyDomains as $domain) {
-    Route::domain($domain)
-        ->middleware(['api.domain'])
-        ->group(base_path('routes/api-domain.php'));
-}
+Route::get('/login', [ApiController::class, 'authRouteInfo'])->defaults('path', 'login');
+Route::get('/signup', [ApiController::class, 'authRouteInfo'])->defaults('path', 'register');
+Route::get('/register', [ApiController::class, 'authRouteInfo'])->defaults('path', 'register');
 
-foreach ($sharedDomains as $domain) {
-    Route::domain($domain)
-        ->prefix('api')
-        ->middleware(['api.domain'])
-        ->group(base_path('routes/api-domain.php'));
-}
+require base_path('routes/api/v1.php');
+require base_path('routes/api/v2.php');
