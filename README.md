@@ -15,9 +15,7 @@ Root:
 - `GET /openapi.json` — OpenAPI spec
 
 Document Parsing:
-- `GET /v1/doc` — Parse document, return JSON (legacy)
-- `GET /v2/doc` — Parse document, return JSON (current)
-- `GET /v2/doc/stream` — Parse document, return NDJSON stream
+- `GET /v1/doc/stream` — Parse document, return NDJSON stream
 
 All routes serve under `/api/...` on web domains, or directly on `api.*` subdomains.
 
