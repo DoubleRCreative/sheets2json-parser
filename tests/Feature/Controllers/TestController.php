@@ -23,7 +23,7 @@ class TestController extends TestCase
      */
     public function request()
     {
-        return $this;
+        return $this->withHeaders($this->headers);
     }
 
 }

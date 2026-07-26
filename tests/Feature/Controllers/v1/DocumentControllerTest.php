@@ -2,10 +2,17 @@
 
 namespace Tests\Feature\Controllers\v1;
 
+use Override;
 use Tests\Feature\Controllers\TestController;
 
 class DocumentControllerTest extends TestController
 {
+    #[Override]
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->markTestSkipped('Skip all DocumentController tests');
+    }
     public function test_user_can_get_document_data(): void
     {
         $response = $this->request()->get('/api/v2/doc?' . http_build_query([

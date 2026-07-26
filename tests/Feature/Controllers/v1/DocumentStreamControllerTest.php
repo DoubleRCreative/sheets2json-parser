@@ -32,7 +32,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_returns_ndjson_with_headers(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 1,
         ]));
@@ -67,7 +67,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_returns_ndjson_without_headers(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 0,
         ]));
@@ -93,7 +93,7 @@ class DocumentStreamControllerTest extends TestController
         ];
 
         $limitKeys = ['Row 1 Value 1', 'Row_1_Value_2'];
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query(array_merge($baseQuery, [
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query(array_merge($baseQuery, [
             'columns' => implode(',', $limitKeys),
         ])));
 
@@ -111,7 +111,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_respects_range(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 1,
             'range' => '2,3',
@@ -126,7 +126,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_respects_offset(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 1,
             'offset' => 1,
@@ -142,14 +142,14 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_validates_required_url(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream');
+        $response = $this->request()->get('/v1/doc/stream');
 
         $response->assertStatus(422);
     }
 
     public function test_stream_validates_invalid_range(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'range' => 'invalid',
         ]));
@@ -159,7 +159,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_handles_invalid_url(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => 'not-a-valid-url',
         ]));
 
@@ -168,7 +168,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_each_line_is_valid_json(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 1,
         ]));
@@ -185,7 +185,7 @@ class DocumentStreamControllerTest extends TestController
 
     public function test_stream_includes_http_headers(): void
     {
-        $response = $this->request()->get('/api/v2/doc/stream?' . http_build_query([
+        $response = $this->request()->get('/v1/doc/stream?' . http_build_query([
             'url' => $this->googleUrl(),
             'headers' => 1,
         ]));
