@@ -14,10 +14,6 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Custom aliases
-        $middleware->alias([
-            'web.domain' => \App\Http\Middleware\EnsureWebDomain::class,
-            'api.domain' => \App\Http\Middleware\EnsureApiDomain::class,
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
