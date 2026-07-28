@@ -29,7 +29,7 @@ class DocumentParseTool extends Tool
 
         try {
             $documentRequest = DocumentRequest::create(
-                '/v1/doc/stream',
+                '/v1/doc',
                 'GET',
                 $input
             );
@@ -38,12 +38,12 @@ class DocumentParseTool extends Tool
             $documentRequest->setRedirector(app('redirect'));
             $documentRequest->validateResolved();
 
-            $response = app(DocumentController::class)->indexV2($documentRequest);
+            $response = app(DocumentController::class)->index($documentRequest);
         } catch (\Throwable $exception) {
             return Response::error($exception->getMessage());
         }
 
-        return Response::structured($response);
+        return Response::structured($response->getBody());
     }
 
     /**
