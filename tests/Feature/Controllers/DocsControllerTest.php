@@ -6,7 +6,7 @@ class DocsControllerTest extends TestController
 {
     public function test_web_route_renders_scalar_api_reference(): void
     {
-        $response = $this->request()->get('/web');
+        $response = $this->request()->get('/docs');
         $response->assertStatus(200);
         $response->assertSee('@scalar/api-reference', false);
         $response->assertSee('data-url="/docs/openapi.yml"', false);
