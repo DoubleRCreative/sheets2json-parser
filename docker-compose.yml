@@ -10,7 +10,7 @@ services:
       context: .
       dockerfile: provision/docker/Dockerfile
     image: sheets2json
-    container_name: sheets2json-app
+    container_name: sheets2json-parser
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -32,7 +32,7 @@ services:
   # Web Server
   nginx:
     image: nginx:1.17-alpine
-    container_name: sheets2json-nginx
+    container_name: sheets2json-parser-nginx
     restart: unless-stopped
     ports:
       - 8882:80
