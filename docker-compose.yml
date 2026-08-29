@@ -18,15 +18,6 @@ services:
       - tmp:/tmp
     networks:
       - sheets2json
-    logging:
-      driver: loki #Grafana Loki
-      options:
-        loki-url: 'http://192.168.1.50:3100/loki/api/v1/push'
-        loki-retries: 2
-        loki-max-backoff: 800ms
-        loki-timeout: 3s
-        keep-file: 'true'
-        mode: "non-blocking"
   
   # Scheduler
   scheduler:
@@ -37,15 +28,6 @@ services:
     command: "php artisan schedule:work"
     volumes:
       - tmp:/tmp
-    logging:
-      driver: loki #Grafana Loki
-      options:
-        loki-url: 'http://192.168.1.50:3100/loki/api/v1/push'
-        loki-retries: 2
-        loki-max-backoff: 800ms
-        loki-timeout: 3s
-        keep-file: 'true'
-        mode: "non-blocking"
 
   # Web Server
   nginx:
