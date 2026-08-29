@@ -26,8 +26,30 @@ info:
     Two optional custom headers control per-request limits:
     - `x-document-size-limit` - maximum remote document size in bytes (hard cap 50MB, default 1MB)
     - `x-document-record-limit` - maximum number of rows to parse (default 1000)
+
+    # MCP Server
+    Sheets2Json also exposes a Model Context Protocol (MCP) server so AI agents and
+    LLM tooling can parse documents directly. The server exposes a single
+    `document.parse` tool that behaves like the `/doc` (Get Document Data) endpoint below.
+
+    ## Connecting
+    Point any MCP client (Claude Desktop, Cursor, VS Code, or any generic MCP client)
+    at the streamable HTTP endpoint:
+
+    ```
+    /mcp/document
+    ```
+
+    ## Transport
+    The server uses the MCP streamable HTTP transport over JSON-RPC 2.0:
+    - Send `POST` requests with `Content-Type: application/json` and `Accept: application/json, text/event-stream`.
+    - The server returns an `Mcp-Session-Id` header; include it on subsequent requests to continue the session.
+    - No authentication is required - the MCP server is publicly accessible.
+
+    ## Tools
+    - `document.parse` - fetch and parse a public CSV/XLSX/Google Sheets/Microsoft Excel Online URL into structured JSON rows. Supports the same `url`, `headers`, `sheet`, `range`, `columns`, `skip_empty`, and `offset` options as the REST API.
 servers:
-  - url: https://api.sheets2json.com/v1
+  - url: /v1
 
 paths:
   /doc:
