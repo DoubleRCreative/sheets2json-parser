@@ -9,7 +9,7 @@ services:
         uid: 1000
       context: .
       dockerfile: provision/docker/Dockerfile
-    image: sheets2json
+    image: sheets2json-parser
     container_name: sheets2json-parser
     restart: unless-stopped
     working_dir: /var/www
