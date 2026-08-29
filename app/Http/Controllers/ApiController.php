@@ -24,13 +24,13 @@ class ApiController extends Controller
                 'openapi' => route('api.openapi'),
             ],
             'auth' => null,
-            'endpoints' => [
-                'v2' => route('api.document.data'),
-                'v1' => [
-                    'url' => route('api.document.data.legacy'),
-                    'deprecated' => true,
-                ],
-            ],
+            // 'endpoints' => [
+            //     'v2' => route('api.document.data'),
+            //     'v1' => [
+            //         'url' => route('api.document.data.legacy'),
+            //         'deprecated' => true,
+            //     ],
+            // ],
             'mcp' => [
                 'description' => 'MCP Server to interact with Sheets2Json via AI agents over HTTP. Supports remote document parsing via Document Data API.',
                 'endpoint' => route('api.mcp.document'),
