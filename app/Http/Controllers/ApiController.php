@@ -9,27 +9,21 @@ class ApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $docsUrl = rtrim((string) config('app.url'), '/') . '/docs/';
-        $apiRoot = rtrim(route('api.root'), '/');
-
         $payload = [
             'type' => 'api',
-            'name' => config('app.name'),
+            'name' => config('app.name') . ' Parser',
             'status' => 'active',
             'description' => 'Parse and extract remote tabular document data to JSON.',
-            'current_version' => 'v2',
+            'current_version' => 'v1',
             'urls' => [
-                'root' => $apiRoot,
-                'documentation' => $docsUrl,
-                'openapi' => route('api.openapi'),
+                'root' => config('app.url'),
+                'documentation' => route('docs'),
+                'openapi' => route('docs.openapi'),
             ],
             'auth' => null,
             'endpoints' => [
-                'v2' => route('api.document.data'),
-                'v1' => [
-                    'url' => route('api.document.data.legacy'),
-                    'deprecated' => true,
-                ],
+                'json' => route('api.document'),
+                'stream' => route('api.document.stream'),
             ],
             'mcp' => [
                 'description' => 'MCP Server to interact with Sheets2Json via AI agents over HTTP. Supports remote document parsing via Document Data API.',
@@ -40,7 +34,7 @@ class ApiController extends Controller
         ];
 
         return response()->json($payload)->withHeaders([
-            'Link' => '<' . $docsUrl . '>; rel="documentation", <' . route('api.openapi') . '>; rel="service-desc"',
+            'Link' => '<' . route('docs') . '>; rel="documentation", <' . route('api.openapi') . '>; rel="service-desc"',
         ]);
     }
 
