@@ -1,0 +1,516 @@
+openapi: '3.0.0'
+info:
+  title: Sheets2Json Core Parsing API
+  version: '1.0'
+  description: |
+    Interact with the Sheets2Json parsing API programmatically.
+
+    # Overview
+    The parsing API turns remote tabular documents (CSV, XLSX, public Google Sheets,
+    and Microsoft Excel Online links) into on-the-fly JSON. Point the API at any
+    publicly accessible document URL and get a JSON payload, or stream the rows back
+    one by one as NDJSON.
+
+    # Supported document types
+    - CSV (`text/csv`)
+    - XLSX (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
+    - Public Google Sheets (`application/vnd.google-apps.spreadsheet`)
+    - Microsoft Excel Online / SharePoint (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`)
+
+    # Authentication
+    This API is unauthenticated. No access token is required to parse
+    publicly accessible documents. The only request headers used are the optional
+    custom limit headers documented below.
+
+    # Request headers
+    Two optional custom headers control per-request limits:
+    - `x-document-size-limit` - maximum remote document size in bytes (hard cap 50MB, default 1MB)
+    - `x-document-record-limit` - maximum number of rows to parse (default 1000)
+
+    # MCP Server
+    Sheets2Json also exposes a Model Context Protocol (MCP) server so AI agents and
+    LLM tooling can parse documents directly. The server exposes a single
+    `document.parse` tool that behaves like the `/doc` (Get Document Data) endpoint below.
+
+    ## Connecting
+    Point any MCP client (Claude Desktop, Cursor, VS Code, or any generic MCP client)
+    at the streamable HTTP endpoint:
+
+    ```
+    /mcp/document
+    ```
+
+    ## Transport
+    The server uses the MCP streamable HTTP transport over JSON-RPC 2.0:
+    - Send `POST` requests with `Content-Type: application/json` and `Accept: application/json, text/event-stream`.
+    - The server returns an `Mcp-Session-Id` header; include it on subsequent requests to continue the session.
+    - No authentication is required - the MCP server is publicly accessible.
+
+    ## Tools
+    - `document.parse` - fetch and parse a public CSV/XLSX/Google Sheets/Microsoft Excel Online URL into structured JSON rows. Supports the same `url`, `headers`, `sheet`, `range`, `columns`, `skip_empty`, and `offset` options as the REST API.
+servers:
+  - url: /v1
+
+paths:
+  /doc:
+    get:
+      tags:
+        - Document Parsing
+      operationId: GetDocumentData
+      summary: Get document data
+      description: |
+        Fetch a remote document, parse it, and return the rows as a JSON response.
+
+        No account is required. Point the API at any publicly accessible document
+        URL and extract data in seconds.
+      parameters:
+        - $ref: '#/components/parameters/url'
+        - $ref: '#/components/parameters/headers'
+        - $ref: '#/components/parameters/sheet'
+        - $ref: '#/components/parameters/range'
+        - $ref: '#/components/parameters/skip_empty'
+        - $ref: '#/components/parameters/columns'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/SizeLimitHeader'
+        - $ref: '#/components/parameters/RecordLimitHeader'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+              example:
+                $ref: '#/components/examples/DocumentDataResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        413:
+          $ref: '#/components/responses/PayloadTooLarge'
+        422:
+          $ref: '#/components/responses/UnprocessableContent'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+  /doc/stream:
+    get:
+      tags:
+        - Document Parsing
+      operationId: StreamDocumentData
+      summary: Stream document data
+      description: |
+        Fetch a remote document, parse it, and stream the rows back as
+        newline-delimited JSON (NDJSON).
+
+        Each row is emitted as a single JSON object followed by a newline. A final
+        `result` line reports the overall document totals and completion status.
+      parameters:
+        - $ref: '#/components/parameters/url'
+        - $ref: '#/components/parameters/headers'
+        - $ref: '#/components/parameters/sheet'
+        - $ref: '#/components/parameters/range'
+        - $ref: '#/components/parameters/skip_empty'
+        - $ref: '#/components/parameters/columns'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/SizeLimitHeader'
+        - $ref: '#/components/parameters/RecordLimitHeader'
+      responses:
+        200:
+          description: Success - newline-delimited JSON stream
+          headers:
+            X-Document-Hash:
+              description: SHA-256 hash of the source document URL
+              schema:
+                type: string
+            X-Document-Type:
+              description: Detected MIME type of the source document
+              schema:
+                type: string
+            X-Accel-Buffering:
+              description: Disables proxy buffering for the streaming response
+              schema:
+                type: string
+                example: 'no'
+          content:
+            application/x-ndjson:
+              schema:
+                type: object
+                oneOf:
+                  - $ref: '#/components/schemas/StreamRow'
+                  - $ref: '#/components/schemas/StreamResult'
+              example:
+                $ref: '#/components/examples/StreamDataResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        413:
+          $ref: '#/components/responses/PayloadTooLarge'
+        422:
+          $ref: '#/components/responses/UnprocessableContent'
+        500:
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    url:
+      name: url
+      in: query
+      required: true
+      description: Fully qualified url to a remote CSV, XLSX, Google Sheets, or Microsoft Excel Online document.
+      example: https://domain.com/path/to/document.csv
+      schema:
+        type: string
+    headers:
+      name: headers
+      in: query
+      required: false
+      description: Treat the first row of the document as column headers.
+      example: 1
+      schema:
+        type: boolean
+    sheet:
+      name: sheet
+      in: query
+      required: false
+      description: Desired tab/sheet from the data source, if applicable.
+      example: Sheet 1
+      schema:
+        type: string
+    range:
+      name: range
+      in: query
+      required: false
+      description: Start and end row index, comma separated, to limit the response to only include data from the specified rows.
+      example: 100,200
+      schema:
+        type: string
+        pattern: '^\d+,\d+$'
+    skip_empty:
+      name: skip_empty
+      in: query
+      required: false
+      description: Ignore rows that do not have any value in any column (blank/empty row).
+      example: 1
+      schema:
+        type: boolean
+    columns:
+      name: columns
+      in: query
+      required: false
+      description: Limit the results to specific columns within the document (the headers option must be enabled).
+      example: Column Name 1,Column Name 2
+      schema:
+        type: string
+    offset:
+      name: offset
+      in: query
+      required: false
+      description: The row index where your target data starts, ignoring all rows before the defined index.
+      example: 1
+      schema:
+        type: integer
+        minimum: 0
+    SizeLimitHeader:
+      name: x-document-size-limit
+      in: header
+      required: false
+      description: Maximum remote document size in bytes. Hard cap is 50MB; defaults to 1MB.
+      schema:
+        type: integer
+        example: 5242880
+    RecordLimitHeader:
+      name: x-document-record-limit
+      in: header
+      required: false
+      description: Maximum number of document rows to parse. Defaults to 1000.
+      schema:
+        type: integer
+        example: 5000
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PayloadTooLarge:
+      description: Payload Too Large - the remote document exceeds the allowed size limit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableContent:
+      description: Unprocessable Content - the request failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationResponse'
+    InternalServerError:
+      description: Internal Server Error - an unexpected error occurred while parsing the document source
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  examples:
+    DocumentDataResponse:
+      data:
+        - id: 1
+          name: Alice
+          email: alice@example.com
+        - id: 2
+          name: Bob
+          email: bob@example.com
+      type: document
+      id: de24fa1f9fbb310ed98a96518ff1d105ceb03f5c
+      attributes:
+        document_url: https://domain.com/path/to/source/data.csv
+        document_type: text/csv
+        document_headers: 1
+        document_target: null
+        document_skip_empty: 0
+        document_columns: null
+        data_count: 2
+        data_from: 2
+        data_to: 3
+        data_next: null
+        data_first: 2
+        data_last: 3
+        data_total: 2
+        data_size: 106
+        created_at: '2024-01-01 00:00:00'
+      metadata: null
+    StreamDataResponse:
+      - type: row
+        metadata:
+          index: 2
+          size: 54
+        data:
+          id: 1
+          name: Alice
+          email: alice@example.com
+      - type: row
+        metadata:
+          index: 3
+          size: 52
+        data:
+          id: 2
+          name: Bob
+          email: bob@example.com
+      - type: result
+        document_url: https://domain.com/path/to/source/data.csv
+        document_type: text/csv
+        document_id: de24fa1f9fbb310ed98a96518ff1d105ceb03f5c
+        status: complete
+        count: 2
+        total: 2
+        first: 2
+        last: 3
+        from: 2
+        to: 3
+        next: null
+        size: 106
+        error: null
+
+  schemas:
+    DocumentResponse:
+      description: Document data object schema
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Document rows parsed from the source url
+        type:
+          type: string
+          description: Resource type (document)
+          example: document
+        id:
+          type: string
+          description: SHA-256 hash of the source url and sheet option
+        attributes:
+          type: object
+          description: Additional information about the parsed document
+          properties:
+            document_url:
+              type: string
+              description: Source data location
+            document_type:
+              type: string
+              description: Source data MIME type
+            document_headers:
+              type: boolean
+              description: Use first row of document as column headers
+            document_target:
+              type: string
+              nullable: true
+              description: Desired tab/sheet from the data source, if applicable
+            document_skip_empty:
+              type: boolean
+              description: Skip empty/blank rows with no values
+            document_columns:
+              type: string
+              nullable: true
+              description: Selected columns from the document
+            data_count:
+              type: integer
+              description: Number of data items parsed
+            data_from:
+              type: integer
+              description: First row included in data set
+            data_to:
+              type: integer
+              description: Last row included in data set
+            data_next:
+              type: integer
+              nullable: true
+              description: Next row index for continued pagination, if any
+            data_first:
+              type: integer
+              description: First row of data from the document
+            data_last:
+              type: integer
+              description: Last row of data from the document
+            data_total:
+              type: integer
+              description: Total number of data items from the document
+            data_size:
+              type: integer
+              description: Size of data (in bytes)
+            created_at:
+              type: string
+              description: Response creation time
+              example: '2024-01-01 00:00:00'
+        metadata:
+          type: object
+          nullable: true
+          description: Non-fatal error or processing information, if any
+      example:
+        $ref: '#/components/examples/DocumentDataResponse'
+    StreamRow:
+      description: A single row in the NDJSON stream
+      type: object
+      properties:
+        type:
+          type: string
+          description: Message type (row)
+          example: row
+        metadata:
+          type: object
+          description: Row metadata
+          properties:
+            index:
+              type: integer
+              description: Row index within the document
+            size:
+              type: integer
+              description: Size of the serialized row (in bytes)
+        data:
+          type: object
+          additionalProperties: true
+          description: Row key/value pairs parsed from the document
+      example:
+        type: row
+        metadata:
+          index: 2
+          size: 54
+        data:
+          id: 1
+          name: Alice
+          email: alice@example.com
+    StreamResult:
+      description: Terminal line in the NDJSON stream reporting document totals
+      type: object
+      properties:
+        type:
+          type: string
+          description: Message type (result)
+          example: result
+        document_url:
+          type: string
+          description: Source data location
+        document_type:
+          type: string
+          description: Source data MIME type
+        document_id:
+          type: string
+          description: SHA-256 hash of the source url and sheet option
+        status:
+          type: string
+          description: Processing status (complete or truncated)
+          enum:
+            - complete
+            - truncated
+        count:
+          type: integer
+          description: Number of data items parsed
+        total:
+          type: integer
+          description: Total number of data items in the document
+        first:
+          type: integer
+          description: First row of data from the document
+        last:
+          type: integer
+          description: Last row of data from the document
+        from:
+          type: integer
+          description: First row included in the data set
+        to:
+          type: integer
+          description: Last row included in the data set
+        next:
+          type: integer
+          nullable: true
+          description: Next row index for continued pagination, if any
+        size:
+          type: integer
+          description: Size of the emitted data (in bytes)
+        error:
+          type: string
+          nullable: true
+          description: Non-fatal parse error, if the stream was truncated
+      example:
+        type: result
+        document_url: https://domain.com/path/to/source/data.csv
+        document_type: text/csv
+        document_id: de24fa1f9fbb310ed98a96518ff1d105ceb03f5c
+        status: complete
+        count: 2
+        total: 2
+        first: 2
+        last: 3
+        from: 2
+        to: 3
+        next: null
+        size: 106
+        error: null
+    ErrorResponse:
+      description: Error response object
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        errors:
+          type: object
+          description: Additional error details
+    ValidationResponse:
+      description: Validation error response
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Field specific validation errors
+
+tags:
+  - name: Document Parsing
+    description: Extract data as JSON or NDJSON from an external tabular document.

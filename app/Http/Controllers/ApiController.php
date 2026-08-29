@@ -48,7 +48,7 @@ class ApiController extends Controller
     {
         $openapiUrl = (string) config('services.api.openapi_url');
         if ($openapiUrl === '') {
-            $openapiUrl = rtrim((string) config('app.url'), '/') . '/docs/openapi.json';
+            $openapiUrl = rtrim((string) config('app.url'), '/') . '/docs/openapi.yml';
         }
 
         return response()->json([
