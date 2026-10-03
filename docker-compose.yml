@@ -18,6 +18,10 @@ services:
       - tmp:/tmp
     networks:
       - sheets2json
+    deploy:
+      resources:
+        limits:
+          memory: 3G
   
   # Scheduler
   scheduler:

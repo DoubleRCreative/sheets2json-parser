@@ -23,6 +23,10 @@ RUN rm -rf /var/lib/apk/lists/*
 # Install PHP extensions
 RUN docker-php-ext-install pgsql pdo_pgsql mbstring exif pcntl bcmath gd zip
 
+# Copy PHP configuration
+COPY provision/docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
+COPY provision/docker/php/www.conf /usr/local/etc/php-fpm.d/www.conf
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -38,9 +42,6 @@ RUN composer install --no-dev --prefer-dist --optimize-autoloader
 # # Install npm dependencies
 # # Build frontend
 # RUN npm install && npm run build
-
-# Disable access logs for php-fpm
-RUN echo "access.log = /dev/null" >> /usr/local/etc/php-fpm.d/www.conf
 
 # Create system user to run Composer and Artisan Commands
 # Set permission for new user to required directories
